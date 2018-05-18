@@ -41,13 +41,18 @@ class HomeScreen(FloatLayout):
         self.clock = TockClock()
         center.add_widget(self.clock)
 
-        top_right = AnchorLayout(anchor_x='left', anchor_y='top')
-        self.weather_label = WeatherLabel(size_hint=(0.1, 0.1))
-        top_right.add_widget(self.weather_label)
+        top_left = AnchorLayout(anchor_x='left', anchor_y='top')
+        self.weather_label = WeatherLabel(size_hint=(None, None))
+        top_left.add_widget(self.weather_label)
+
+        top_right = AnchorLayout(anchor_x='right', anchor_y='top')
+        self.date_label = TockDate()
+        top_right.add_widget(self.date_label)
 
         self.add_widget(backdrop)
         self.add_widget(bottom_center)
         self.add_widget(center)
+        self.add_widget(top_left)
         self.add_widget(top_right)
 
         self.image_request()
@@ -66,12 +71,11 @@ class HomeScreen(FloatLayout):
         if 'title' in data:
             self.title_label.text = data['title']
 
+
 class Tock(App):
     def build(self):
         return HomeScreen()
 
 
 if __name__ == '__main__':
-    Window.size = (1366, 768)
-    # Window.fullscreen = True
     Tock().run()
