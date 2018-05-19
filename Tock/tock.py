@@ -20,6 +20,7 @@ from kivy.lang.builder import Builder
 #             # dash_length: 3''')
 
 from widgets import *
+from backdrops import *
 
 
 class HomeScreen(FloatLayout):
@@ -29,13 +30,9 @@ class HomeScreen(FloatLayout):
         # TODO: load from config
 
         # view initialization
-        backdrop = AnchorLayout(anchor_x='center', anchor_y='center')
-        self.image = AsyncImage()
-        backdrop.add_widget(self.image)
-
-        bottom_center = AnchorLayout(anchor_x='center', anchor_y='bottom')
-        self.title_label = Label(size_hint=(None, None))
-        bottom_center.add_widget(self.title_label)
+        backdrop_layout = AnchorLayout(anchor_x='center', anchor_y='center')
+        backdrop = NasaApod()
+        backdrop_layout.add_widget(backdrop)
 
         center = AnchorLayout(anchor_x='center', anchor_y='center')
         self.clock = TockClock()
@@ -49,14 +46,12 @@ class HomeScreen(FloatLayout):
         self.date_label = TockDate()
         top_right.add_widget(self.date_label)
 
-        self.add_widget(backdrop)
-        self.add_widget(bottom_center)
+        self.add_widget(backdrop_layout)
         self.add_widget(center)
         self.add_widget(top_left)
         self.add_widget(top_right)
 
-        self.image_request()
-        Clock.schedule_interval(self.image_request, 86400)
+
 
     def image_request(self, val=0):
         # TODO make this async, section off the url

@@ -12,7 +12,6 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.layout import Layout
 
 
-
 class WeatherLabel(Label):
     def __init__(self, **kwargs):
         super(WeatherLabel, self).__init__(**kwargs)
@@ -66,6 +65,7 @@ class TockDate(Label):
         self.size_hint = (None, None)
         self.font_size = 50
         self.size = (300, 100)
+        # TODO make this the real update time
         Clock.schedule_interval(self.date_str, 0.5)
 
     def date_str(self, val=0):
