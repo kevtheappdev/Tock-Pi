@@ -17,6 +17,7 @@ class WeatherLabel(Label):
         super(WeatherLabel, self).__init__(**kwargs)
 
         self.font_size = 50
+
         self.size_hint = (None, None)
 
         self.fetch()
