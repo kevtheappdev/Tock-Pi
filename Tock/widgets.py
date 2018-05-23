@@ -15,9 +15,13 @@ from kivy.uix.layout import Layout
 class WeatherLabel(Label):
     def __init__(self, **kwargs):
         super(WeatherLabel, self).__init__(**kwargs)
+
+        self.font_siz
+        e = 50
+        self.size_hint = (None, None)
+
         self.fetch()
         Clock.schedule_interval(self.fetch, 60 * 60)
-        self.font_size = 50
 
     def fetch(self, val=0):
         # TODO: Avoid hard coding
@@ -26,6 +30,7 @@ class WeatherLabel(Label):
         print(data)
         if 'error' in data:
             print('ERROR: Could not load weather data: {}'.format(data))
+            return
 
         # TODO: fix this is gacky
         temp = int(data['main']['temp'])
