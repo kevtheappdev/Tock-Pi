@@ -1,16 +1,13 @@
 import kivy
 kivy.require('1.10.1') # replace with your current kivy version !
 
+
 from kivy.clock import Clock
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.anchorlayout import AnchorLayout
-from kivy.core.window import Window
-from kivy.graphics import Rectangle
-from kivy.uix.button import Button
-from kivy.uix.image import Image
-from kivy.uix.image import AsyncImage
-from kivy.lang.builder import Builder
+
+# from kivy.lang.builder import Builder
 
 # Builder.load_string('''<Widget>:
 #     canvas.after:
@@ -21,55 +18,100 @@ from kivy.lang.builder import Builder
 
 from widgets import *
 from backdrops import *
+from config import *
 
 
-class HomeScreen(FloatLayout):
+class HomeScreen(FloatLayout, Subscriber):
+    widget_positions = {
+         'backdrop' : ('center', 'center'),
+         'top-left' : ('left', 'top'),
+         'top-right': ('right', 'top'),
+         'bottom-left': ('left', 'bottom'),
+         'bottom-right': ('right', 'bottom'),
+         'clock'  : ('center', 'center')
+    }
+
     def __init__(self, **kwargs):
         super(HomeScreen, self).__init__(**kwargs)
+        self.widgets = dict()
 
-        # TODO: load from config
+        Config().HomeScreen.add_subscriber(self)
 
         # view initialization
-        backdrop_layout = AnchorLayout(anchor_x='center', anchor_y='center')
-        backdrop = NasaApod()
-        backdrop_layout.add_widget(backdrop)
+        self.load_views()
 
-        center = AnchorLayout(anchor_x='center', anchor_y='center')
-        self.clock = TockClock()
-        center.add_widget(self.clock)
+    def load_views(self):
+        self.backdrop = self.get_widget('backdrop')
+        self.top_left = self.get_widget('top-left')
+        self.top_right = self.get_widget('top-right')
+        self.bottom_left = self.get_widget('bottom-left')
+        self.bottom_right = self.get_widget('bottom-right')
+        self.clock = self.get_widget('clock')
 
-        top_left = AnchorLayout(anchor_x='left', anchor_y='top')
-        self.weather_label = WeatherLabel(size_hint=(None, None))
-        top_left.add_widget(self.weather_label)
-
-        top_right = AnchorLayout(anchor_x='right', anchor_y='top')
-        self.date_label = TockDate()
-        top_right.add_widget(self.date_label)
-
-        self.add_widget(backdrop_layout)
-        self.add_widget(center)
-        self.add_widget(top_left)
-        self.add_widget(top_right)
+        self.add_widget(self.backdrop)
+        self.add_widget(self.clock)
+        self.add_widget(self.top_left)
+        self.add_widget(self.top_right)
+        self.add_widget(self.bottom_right)
 
 
+    def get_widget(self, widg):
+        if widg not in HomeScreen.widget_positions:
+            raise ValueError('Requested for invalid widget position: {}'.format(widg))
 
-    def image_request(self, val=0):
-        # TODO make this async, section off the url
-        req = requests.get("https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY")
-        data = req.json()
-        if 'error' in data:
-            print('ERROR: Could not load: {}'.format(data['error']))
-            # TODO: Implement logging and have some kind of fall back
-        if 'hdurl' in data:
-            print('image url: {}'.format(data['hdurl']))
-            self.image.source = data['hdurl']
-        if 'title' in data:
-            self.title_label.text = data['title']
+        widg_name = Config().HomeScreen.get(widg)
+        position = HomeScreen.widget_positions[widg]
+        anchor_x = position[0]
+        anchor_y = position[1]
+
+        print('Getting widget: {}'.format(widg))
+
+        if not widg_name:
+            return AnchorLayout(anchor_x=anchor_x, anchor_y=anchor_y)
+
+        try:
+            widg_class = eval(widg_name)
+        except NameError:
+            print('ERROR: Could not find class {}'.format(widg_name))
+            return None
+        else:
+            if callable(widg_class):
+                widget = widg_class()
+            else:
+                widget = widg_class
+
+
+            layout = AnchorLayout(anchor_x=anchor_x, anchor_y=anchor_y)
+            layout.add_widget(widget)
+            self.widgets[widg] = layout
+            print('returning {}'.format(layout))
+            return layout
+
+    def update(self, updated_key):
+        print('updating home screen')
+        if updated_key in self.widgets:
+            existing_widget = self.widgets[updated_key]
+            self.remove_widget(existing_widget)
+
+        updated_widget = self.get_widget(updated_key)
+        if updated_widget:
+            self.add_widget(updated_widget)
+
 
 
 class Tock(App):
+    def __init__(self, config_file='tock.config', **kwargs):
+        super(Tock, self).__init__(**kwargs)
+        self.config_file = config_file
+        self.load_config()
+        Clock.schedule_interval(self.load_config, 15)
+
     def build(self):
         return HomeScreen()
+
+    def load_config(self, val=0):
+        Config(self.config_file)
+
 
 
 if __name__ == '__main__':
