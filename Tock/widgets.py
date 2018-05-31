@@ -1,9 +1,11 @@
 import time
 import json
 import requests
+import logging
 from kivy.uix.widget import Widget
 from kivy.uix.label import Label
 from kivy.clock import Clock
+from kivy import Logger
 from kivy.uix.image import AsyncImage
 from kivy.graphics import Color
 from kivy.graphics import Rectangle
@@ -27,14 +29,13 @@ class WeatherLabel(Label):
         # TODO: Avoid hard coding
         req = requests.get("http://api.openweathermap.org/data/2.5/weather?q=Cupertino&appid=1c51e68c4823e92a75f2590404fd6634&units=imperial")
         data = req.json()
-        print(data)
         if 'error' in data:
-            print('ERROR: Could not load weather data: {}'.format(data))
+            Logger.error('Error fetching weather: {}'.format(data['error']))
             return
 
         # TODO: fix this is gacky
         temp = int(data['main']['temp'])
-        print(temp)
+        Logger.debug('Parsed temperature: {}'.format(temp))
         self.text = '{} °'.format(temp)
 
 

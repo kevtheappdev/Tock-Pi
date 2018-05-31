@@ -1,4 +1,5 @@
 import requests
+import logging
 
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.anchorlayout import AnchorLayout
@@ -10,6 +11,8 @@ from kivy.clock import Clock
 class NasaApod(FloatLayout):
     def __init__(self, show_desc=True, **kwargs):
         super(NasaApod, self).__init__(**kwargs)
+        self.logger = logging.getLogger('tock')
+
         backdrop = AnchorLayout(anchor_x='center', anchor_y='center')
         self.image = AsyncImage()
         backdrop.add_widget(self.image)
@@ -26,18 +29,21 @@ class NasaApod(FloatLayout):
         Clock.schedule_interval(self.image_request, 86400)
 
     def image_request(self, val=0):
+        self.logger.info('Fetching NASA image of the day')
         # TODO make this async, section off the url
-        print('Making request')
         req = requests.get("https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY")
         data = req.json()
 
         if 'error' in data:
-            print('ERROR: Could not load: {}'.format(data['error']))
-            # TODO: Implement logging and have some kind of fall back
+            # TODO: have some kind of a fall back
+            self.logger.error('Encountered error with APOD API call: {}'.format(data['error']))
         if 'hdurl' in data:
-            print('image url: {}'.format(data['hdurl']))
+            self.logger.info('Found url in data: {}'.format(data['hdurl']))
             self.image.source = data['hdurl']
+            # set title only if we have an image
+            if 'title' in data:
+                self.title_label.text = data['title']
         else:
-            self.image.source = 'https://apod.nasa.gov/apod/image/1805/Tarantula_HubbleLacrue_3204.jpg'
-        if 'title' in data:
-            self.title_label.text = data['title']
+            default_image = 'https://apod.nasa.gov/apod/image/1805/Tarantula_HubbleLacrue_3204.jpg'
+            self.logger.warning('Failed to find valid image url, defaulting to: {}'.format(default_image))
+            self.image.source = default_image

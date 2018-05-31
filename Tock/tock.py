@@ -1,11 +1,14 @@
 import kivy
 kivy.require('1.10.1') # replace with your current kivy version !
 
+import logging
+from logging import handlers
 
 from kivy.clock import Clock
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.anchorlayout import AnchorLayout
+from kivy.uix.screenmanager import ScreenManager, Screen
 
 # from kivy.lang.builder import Builder
 
@@ -16,12 +19,52 @@ from kivy.uix.anchorlayout import AnchorLayout
 #             dash_offset: 5
 #             # dash_length: 3''')
 
-from widgets import *
-from backdrops import *
+
 from config import *
+from utils import *
 
 
-class HomeScreen(FloatLayout, Subscriber):
+class AlarmManager(object):
+    def __init__(self):
+        self.alarm = Config().Alarm
+
+        if not self.alarm:
+            raise ValueError('Configuration file not instantiated')
+
+        alarm_time = self.alarm.time
+        seconds = seconds_until(alarm_time)
+
+        self.greetings = self.alarm.greetings
+
+        if not seconds:
+            raise ValueError("Yeah we're gonna need a valid time value.... and we don't... :(")
+        if seconds > 300:
+            Clock.schedule_interval(self.fetch_greetings, seconds - 300)
+        else:
+            self.fetch_greetings(self.wakeup, seconds)
+
+        Clock.schedule_interval(self.wakeup, seconds)
+
+    def wakeup(self):
+        application.sm.current = 'alarm'
+
+
+    def fetch_greetings(self):
+        for greeting in self.greetings:
+            greeting_obj = eval_widg(greeting)
+            greeting_obj.fetch()
+
+
+############################################
+#                 Screens                  #
+############################################
+
+class AlarmScreen(Screen, Subscriber):
+    def __init__(self, **kwargs):
+        super(AlarmScreen, self).__init__(**kwargs)
+        self.add_widget(Label(text='Wake Up!!'))
+
+class HomeScreen(Screen, Subscriber):
     widget_positions = {
          'backdrop' : ('center', 'center'),
          'top-left' : ('left', 'top'),
@@ -57,6 +100,7 @@ class HomeScreen(FloatLayout, Subscriber):
 
     def get_widget(self, widg):
         if widg not in HomeScreen.widget_positions:
+            logger.exception('Widget not in a specified position')
             raise ValueError('Requested for invalid widget position: {}'.format(widg))
 
         widg_name = Config().HomeScreen.get(widg)
@@ -64,31 +108,19 @@ class HomeScreen(FloatLayout, Subscriber):
         anchor_x = position[0]
         anchor_y = position[1]
 
-        print('Getting widget: {}'.format(widg))
 
         if not widg_name:
+            logger.warning('Widget not specified in configuration file, returning empty widget')
             return AnchorLayout(anchor_x=anchor_x, anchor_y=anchor_y)
 
-        try:
-            widg_class = eval(widg_name)
-        except NameError:
-            print('ERROR: Could not find class {}'.format(widg_name))
-            return None
-        else:
-            if callable(widg_class):
-                widget = widg_class()
-            else:
-                widget = widg_class
+        widget = eval_widg(widg_name)
 
-
-            layout = AnchorLayout(anchor_x=anchor_x, anchor_y=anchor_y)
-            layout.add_widget(widget)
-            self.widgets[widg] = layout
-            print('returning {}'.format(layout))
-            return layout
+        layout = AnchorLayout(anchor_x=anchor_x, anchor_y=anchor_y)
+        layout.add_widget(widget)
+        self.widgets[widg] = layout
+        return layout
 
     def update(self, updated_key):
-        print('updating home screen')
         if updated_key in self.widgets:
             existing_widget = self.widgets[updated_key]
             self.remove_widget(existing_widget)
@@ -98,16 +130,49 @@ class HomeScreen(FloatLayout, Subscriber):
             self.add_widget(updated_widget)
 
 
+############################################
+#                 Application              #
+############################################
 
 class Tock(App):
     def __init__(self, config_file='tock.config', **kwargs):
         super(Tock, self).__init__(**kwargs)
+        self.setup_logging()
         self.config_file = config_file
         self.load_config()
+        self.alarm_manager = AlarmManager()
+        # refresh config
         Clock.schedule_interval(self.load_config, 15)
 
+        # Multiple screens
+        self.sm = ScreenManager()
+        self.sm.add_widget(HomeScreen(name='homescreen'))
+        self.sm.add_widget(AlarmScreen(name='alarm'))
+
+    def setup_logging(self):
+        # logging
+        logger = logging.getLogger('tock')
+        logger.setLevel(logging.DEBUG)
+
+        console_output = logging.StreamHandler()
+        console_output.setLevel(logging.DEBUG)
+
+        log_file = logging.handlers.RotatingFileHandler('tock.log', maxBytes=80000, backupCount=10)
+        log_file.setLevel(logging.DEBUG)
+
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        log_file.setFormatter(formatter)
+        console_output.setFormatter(formatter)
+
+        logger.addHandler(console_output)
+        logger.addHandler(log_file)
+        self.logger = logger
+
+    def change_screens(self, val):
+        self.sm.current = 'alarm'
+
     def build(self):
-        return HomeScreen()
+        return self.sm
 
     def load_config(self, val=0):
         Config(self.config_file)
@@ -115,4 +180,6 @@ class Tock(App):
 
 
 if __name__ == '__main__':
-    Tock().run()
+    logger = logging.getLogger('tock')
+    application = Tock()
+    application.run()

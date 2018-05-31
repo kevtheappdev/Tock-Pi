@@ -1,5 +1,9 @@
 import re
 import collections
+import logging
+
+# TODO: Inherit from collections instead of dict
+
 
 class DotDict(dict):
     def __init__(self, **kwargs):
@@ -28,6 +32,7 @@ class Subscriber(object):
 
 class Config(object):
     _instance = None
+    logger = logging.getLogger('tock')
 
     class ConfigSection(DotDict):
         def __init__(self, heading, **kwargs):
@@ -48,8 +53,9 @@ class Config(object):
             self.notify(key)
 
         def notify(self, key):
-            print('notifiying subscribers...')
+            Config.logger.debug('Notifying {} subscribers..'.format(len(self.subscribers)))
             for subscriber in self.subscribers:
+                Config.logger.debug('Subscriber: {}'.format(subscriber))
                 subscriber.update(key)
 
     class ConfigInstance(DotDict):
@@ -77,31 +83,42 @@ class Config(object):
                     heading = heading_srch.group(1)
 
                     if heading in self:
-                        print('already exists: {} type: {}'.format(heading, type(self[heading])))
+                        Config.logger.debug('already exists: {} type: {}'.format(heading, type(self[heading])))
                         current_section = self[heading]
                     else:
+                        Config.logger.debug('Found new section: {}'.format(heading))
                         current_section = Config.ConfigSection(heading=heading)
                         self[heading] = current_section
                     continue
 
                 if not current_section:
-                    print('did not have a section')
                     continue
 
                 line_split = line.find(':')
                 if line_split == -1:
-                    print('invalid conditions')
                     continue
 
                 option = line[:line_split].strip()
                 value = line[line_split + 1:].strip()
 
+                if ',' in line:
+                    # an array value
+                    value = value.split(',')
+                    result = list()
+                    for element in value:
+                        element = element.strip()
+                        if not element:
+                            continue
+                        result.append(element)
+                    value = result
+
                 current_value = current_section[option]
                 if current_value != value:
+                    Config.logger.debug('Updating configuration option: {} with value: {}'.format(value, option))
                     current_section[option] = value
 
     def __init__(self, config_file=None):
-        print('Config instance: {} Config file: {}'.format(Config._instance, config_file))
+        Config.logger.debug('Config instance: {} Config file: {}'.format(Config._instance, config_file))
         if config_file and not Config._instance:
             Config._instance = Config.ConfigInstance(config_file)
         elif config_file:
