@@ -45,11 +45,11 @@ class AlarmManager(object):
 
         Clock.schedule_interval(self.wakeup, seconds)
 
-    def wakeup(self):
+    def wakeup(self, val):
         application.sm.current = 'alarm'
 
 
-    def fetch_greetings(self):
+    def fetch_greetings(self, val):
         for greeting in self.greetings:
             greeting_obj = eval_widg(greeting)
             greeting_obj.fetch()
