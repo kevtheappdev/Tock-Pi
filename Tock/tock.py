@@ -7,8 +7,11 @@ from logging import handlers
 from kivy.clock import Clock
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.screenmanager import ScreenManager, Screen
+
+from kivy.core.audio import SoundLoader
 
 # from kivy.lang.builder import Builder
 
@@ -27,6 +30,7 @@ from utils import *
 class AlarmManager(object):
     def __init__(self):
         self.alarm = Config().Alarm
+        self.logger = logging.getLogger('tock')
 
         if not self.alarm:
             raise ValueError('Configuration file not instantiated')
@@ -36,18 +40,27 @@ class AlarmManager(object):
 
         self.greetings = self.alarm.greetings
 
+        file_name = self.alarm.sound
+
+        self.sound_loader = SoundLoader.load(filename='alarm.wav')
+
         if not seconds:
             raise ValueError("Yeah we're gonna need a valid time value.... and we don't... :(")
         if seconds > 300:
-            Clock.schedule_interval(self.fetch_greetings, seconds - 300)
+            Clock.schedule_once(self.fetch_greetings, seconds - 300)
         else:
-            self.fetch_greetings(self.wakeup, seconds)
+            self.fetch_greetings(seconds)
 
-        Clock.schedule_interval(self.wakeup, seconds)
+        Clock.schedule_once(self.wakeup, seconds)
 
     def wakeup(self, val):
+        self.logger.info('Waking up now...')
         application.sm.current = 'alarm'
+        self.sound_loader.play()
+        Clock.schedule_interval(self.reset, 60*60)
 
+    def reset(self, val):
+        application.sm.current = 'home'
 
     def fetch_greetings(self, val):
         for greeting in self.greetings:
@@ -62,7 +75,9 @@ class AlarmManager(object):
 class AlarmScreen(Screen, Subscriber):
     def __init__(self, **kwargs):
         super(AlarmScreen, self).__init__(**kwargs)
-        self.add_widget(Label(text='Wake Up!!'))
+        self.box_layout = BoxLayout(orientation='horizontal')
+        self.box_layout.add_widget(TockClock())
+        self.add_widget(self.box_layout)
 
 class HomeScreen(Screen, Subscriber):
     widget_positions = {

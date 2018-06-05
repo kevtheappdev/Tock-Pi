@@ -1,6 +1,7 @@
 import logging
 
 from datetime import datetime
+from datetime import timedelta
 
 from widgets import *
 from backdrops import *
@@ -9,13 +10,15 @@ from greetings import *
 
 def seconds_until(time_str):
     current_timestamp = datetime.now()
-    date_formats = ['-I:%M %p', '%H:%M']
+    date_formats = ['%I:%M %p', '%H:%M']
     parsed_time = None
+    print(time.strptime('10:40 PM', date_formats[0]))
 
     for d_format in date_formats:
         try:
             parsed_time = datetime.strptime(time_str, d_format)
-        except ValueError:
+        except ValueError as e:
+            logging.getLogger('tock').info('Failed loading time: {}'.format(e))
             continue
         else:
             break
@@ -24,9 +27,10 @@ def seconds_until(time_str):
         return
 
     parsed_time = parsed_time.replace(year=current_timestamp.year, day=current_timestamp.day, month=current_timestamp.month)
+    logging.getLogger('tock').info('parsed time: {}'.format(parsed_time))
 
     if current_timestamp > parsed_time:
-        parsed_time = parsed_time.replace(day=(current_timestamp.day + 1))
+        parsed_time += timedelta(days=1)
 
     return (parsed_time - current_timestamp).total_seconds()
 
