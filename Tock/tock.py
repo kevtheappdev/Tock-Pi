@@ -4,6 +4,8 @@ kivy.require('1.10.1') # replace with your current kivy version !
 import logging
 from logging import handlers
 
+from io import StringIO
+
 from kivy.clock import Clock
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
@@ -12,9 +14,11 @@ from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.screenmanager import ScreenManager, Screen
 
 from kivy.core.audio import SoundLoader
+from google.cloud import texttospeech as tts
+
 
 # from kivy.lang.builder import Builder
-
+#
 # Builder.load_string('''<Widget>:
 #     canvas.after:
 #         Line:
@@ -38,7 +42,11 @@ class AlarmManager(object):
         alarm_time = self.alarm.time
         seconds = seconds_until(alarm_time)
 
+
         self.greetings = self.alarm.greetings
+        if not self.greetings:
+            self.greetings = []
+
 
         file_name = self.alarm.sound
 
@@ -63,9 +71,39 @@ class AlarmManager(object):
         application.sm.current = 'home'
 
     def fetch_greetings(self, val):
+        morning_greeting_text = StringIO()
         for greeting in self.greetings:
             greeting_obj = eval_widg(greeting)
+            if not greeting_obj:
+                continue
+
             greeting_obj.fetch()
+
+            greeting_txt = greeting_obj.speak_str()
+            morning_greeting_text.write(greeting_txt)
+
+        if len(self.greetings) > 0:
+            self.generate_greeting(morning_greeting_text.getvalue())
+
+    def generate_greeting(self, greeting_str):
+
+        client = tts.TextToSpeechClient()
+
+        input_text = tts.types.SynthesisInput(text=greeting_str)
+
+        # Note: the voice can also be specified by name.
+        # Names of voices can be retrieved with client.list_voices().
+        voice = tts.types.VoiceSelectionParams(
+            language_code='en-US',
+            ssml_gender=tts.enums.SsmlVoiceGender.FEMALE)
+
+        audio_config = tts.types.AudioConfig(
+            audio_encoding=tts.enums.AudioEncoding.MP3)
+
+        response = client.synthesize_speech(input_text, voice, audio_config)
+
+        with open('greeting.mp3', 'wb') as out:
+            out.write(response.audio_content)
 
 
 ############################################
@@ -76,8 +114,16 @@ class AlarmScreen(Screen, Subscriber):
     def __init__(self, **kwargs):
         super(AlarmScreen, self).__init__(**kwargs)
         self.box_layout = BoxLayout(orientation='horizontal')
-        self.box_layout.add_widget(TockClock())
+
+        self.left_area = AnchorLayout(anchor_x='center', anchor_y='center')
+        self.left_area.add_widget(TockClock())
+        self.right_area = AnchorLayout(anchor_x='center', anchor_y='center')
+
+        self.box_layout.add_widget(self.left_area)
+        self.box_layout.add_widget(self.right_area)
+
         self.add_widget(self.box_layout)
+    
 
 class HomeScreen(Screen, Subscriber):
     widget_positions = {

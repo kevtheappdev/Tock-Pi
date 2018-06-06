@@ -8,7 +8,6 @@ from kivy.uix.label import Label
 from kivy.clock import Clock
 
 
-
 class NasaApod(FloatLayout):
     def __init__(self, show_desc=True, **kwargs):
         super(NasaApod, self).__init__(**kwargs)
@@ -29,12 +28,6 @@ class NasaApod(FloatLayout):
         self.image_request()
         Clock.schedule_interval(self.image_request, 86400)
 
-
-    def _on_source_error(self, instance, error=None):
-        print('bind call back called')
-        print('instance: {}'.format(instance))
-        print('error: {}'.format(error))
-
     def image_request(self, val=0):
         self.logger.info('Fetching NASA image of the day')
         # TODO make this async, section off the url
@@ -44,10 +37,10 @@ class NasaApod(FloatLayout):
         if 'error' in data:
             # TODO: have some kind of a fall back
             self.logger.error('Encountered error with APOD API call: {}'.format(data['error']))
-        if 'hdurl' in data:
-            self.logger.info('Found url in data: {}'.format(data['hdurl']))
+        if 'url' in data:
+            self.logger.info('Found url in data: {}'.format(data['url']))
 
-            self.image.source = data['hdurl']
+            self.image.source = data['url']
             # set title only if we have an image
             if 'title' in data:
                 self.title_label.text = data['title']
