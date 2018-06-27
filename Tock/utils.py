@@ -8,6 +8,9 @@ from backdrops import *
 from greetings import *
 
 
+# utility methods
+
+
 def seconds_until(time_str):
     current_timestamp = datetime.now()
     date_formats = ['%I:%M %p', '%H:%M']
@@ -49,3 +52,6 @@ def eval_widg(widg_name):
             widget = widg_class
 
         return widget
+
+
+

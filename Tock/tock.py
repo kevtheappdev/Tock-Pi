@@ -1,5 +1,6 @@
 import kivy
-kivy.require('1.10.1') # replace with your current kivy version !
+kivy.require('1.10.1')
+import time
 
 import logging
 from logging import handlers
@@ -29,82 +30,83 @@ from google.cloud import texttospeech as tts
 
 from config import *
 from utils import *
+from greetings import *
 
 
 class AlarmManager(object):
     def __init__(self):
         self.alarm = Config().Alarm
         self.logger = logging.getLogger('tock')
+        self.index = 0
 
         if not self.alarm:
             raise ValueError('Configuration file not instantiated')
 
         alarm_time = self.alarm.time
         seconds = seconds_until(alarm_time)
+        print('num seconds: {}'.format(seconds))
 
 
-        self.greetings = self.alarm.greetings
-        if not self.greetings:
-            self.greetings = []
+        greeting_implementations = self.alarm.greetings
+        if not greeting_implementations:
+            greeting_implementations = []
 
+        self.greetings = [eval_widg(greeting) for greeting in greeting_implementations]
 
         file_name = self.alarm.sound
-
         self.sound_loader = SoundLoader.load(filename='alarm.wav')
 
         if not seconds:
             raise ValueError("Yeah we're gonna need a valid time value.... and we don't... :(")
+
         if seconds > 300:
             Clock.schedule_once(self.fetch_greetings, seconds - 300)
         else:
-            self.fetch_greetings(seconds)
+            self.fetch_greetings()
 
         Clock.schedule_once(self.wakeup, seconds)
+
+    def fetch_greetings(self):
+        for greeting in self.greetings:
+            if not greeting:
+                continue
+            greeting.fetch()
 
     def wakeup(self, val):
         self.logger.info('Waking up now...')
         application.sm.current = 'alarm'
-        self.sound_loader.play()
+        self.play_greeting()
         Clock.schedule_interval(self.reset, 60*60)
 
     def reset(self, val):
-        application.sm.current = 'home'
+        application.sm.current = 'homescreen'
 
-    def fetch_greetings(self, val):
-        morning_greeting_text = StringIO()
-        for greeting in self.greetings:
-            greeting_obj = eval_widg(greeting)
-            if not greeting_obj:
-                continue
+    def play_greeting(self):
+        index = self.index
+        if index >= len(self.greetings):
+            return
 
-            greeting_obj.fetch()
+        greeting = self.greetings[index]
+        if not greeting:
+            print('this greeting is no good')
+            return
 
-            greeting_txt = greeting_obj.speak_str()
-            morning_greeting_text.write(greeting_txt)
+        widg_display = greeting.display_widget()
+        if widg_display:
+            application.alarm_screen.display_widget(widg_display)
 
-        if len(self.greetings) > 0:
-            self.generate_greeting(morning_greeting_text.getvalue())
+        sound = greeting.sound_bit
+        if not sound:
+            print('received empty sound')
+            return
 
-    def generate_greeting(self, greeting_str):
+        sound.bind(on_stop=self.greeting_done)
+        sound.play()
 
-        client = tts.TextToSpeechClient()
-
-        input_text = tts.types.SynthesisInput(text=greeting_str)
-
-        # Note: the voice can also be specified by name.
-        # Names of voices can be retrieved with client.list_voices().
-        voice = tts.types.VoiceSelectionParams(
-            language_code='en-US',
-            ssml_gender=tts.enums.SsmlVoiceGender.FEMALE)
-
-        audio_config = tts.types.AudioConfig(
-            audio_encoding=tts.enums.AudioEncoding.MP3)
-
-        response = client.synthesize_speech(input_text, voice, audio_config)
-
-        with open('greeting.mp3', 'wb') as out:
-            out.write(response.audio_content)
-
+    def greeting_done(self, dt):
+        time.sleep(2)
+        self.index += 1
+        self.play_greeting()
 
 ############################################
 #                 Screens                  #
@@ -123,7 +125,15 @@ class AlarmScreen(Screen, Subscriber):
         self.box_layout.add_widget(self.right_area)
 
         self.add_widget(self.box_layout)
-    
+
+        self.main_widg = None
+
+    def display_widget(self, widg):
+        if self.main_widg:
+            self.right_area.remove_widget(self.main_widg)
+
+        self.main_widg = widg
+        self.right_area.add_widget(widg)
 
 class HomeScreen(Screen, Subscriber):
     widget_positions = {
@@ -207,8 +217,11 @@ class Tock(App):
 
         # Multiple screens
         self.sm = ScreenManager()
-        self.sm.add_widget(HomeScreen(name='homescreen'))
-        self.sm.add_widget(AlarmScreen(name='alarm'))
+        self.home_screen = HomeScreen(name='homscreen')
+        self.alarm_screen = AlarmScreen(name='alarm')
+        self.sm.add_widget(self.home_screen)
+        self.sm.add_widget(self.alarm_screen)
+        # Clock.schedule_once(self.change_screens, 15)
 
     def setup_logging(self):
         # logging

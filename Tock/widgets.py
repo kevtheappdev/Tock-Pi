@@ -13,11 +13,13 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.layout import Layout
 
+from config import DotDict
+
 
 class WeatherLabel(Label):
     def __init__(self, **kwargs):
         super(WeatherLabel, self).__init__(**kwargs)
-
+        self.logger = logging.getLogger('tock')
         self.font_size = 50
 
         self.size_hint = (None, None)
@@ -28,14 +30,14 @@ class WeatherLabel(Label):
     def fetch(self, val=0):
         # TODO: Avoid hard coding
         req = requests.get("http://api.openweathermap.org/data/2.5/weather?q=Cupertino&appid=1c51e68c4823e92a75f2590404fd6634&units=imperial")
-        data = req.json()
+        data = DotDict(req.json())
         if 'error' in data:
-            Logger.error('Error fetching weather: {}'.format(data['error']))
+            self.logger.error('Error fetching weather: {}'.format(data['error']))
             return
 
-        # TODO: fix this is gacky
+        # TODO: fix this it's gacky
         temp = int(data['main']['temp'])
-        Logger.debug('Parsed temperature: {}'.format(temp))
+        self.logger.debug('Parsed temperature: {}'.format(temp))
         self.text = '{} °'.format(temp)
 
 

@@ -2,13 +2,10 @@ import re
 import collections
 import logging
 
+
 # TODO: Inherit from collections instead of dict
 
-
 class DotDict(dict):
-    def __init__(self, **kwargs):
-        super(DotDict, self).__init__(**kwargs)
-
     def __getitem__(self, item):
         if item not in self:
             return None
