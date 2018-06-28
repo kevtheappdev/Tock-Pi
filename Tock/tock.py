@@ -66,7 +66,7 @@ class AlarmManager(object):
 
         Clock.schedule_once(self.wakeup, seconds)
 
-    def fetch_greetings(self):
+    def fetch_greetings(self, val=0):
         for greeting in self.greetings:
             if not greeting:
                 continue
