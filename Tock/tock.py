@@ -38,6 +38,7 @@ class AlarmManager(object):
         self.alarm = Config().Alarm
         self.logger = logging.getLogger('tock')
         self.index = 0
+        self.sound = None
 
         if not self.alarm:
             raise ValueError('Configuration file not instantiated')
@@ -63,7 +64,7 @@ class AlarmManager(object):
             Clock.schedule_once(self.fetch_greetings, seconds - 300)
         else:
             self.fetch_greetings()
-
+        print('Will wake up in {} seconds'.format(seconds))
         Clock.schedule_once(self.wakeup, seconds)
 
     def fetch_greetings(self, val=0):
@@ -87,6 +88,7 @@ class AlarmManager(object):
             return
 
         greeting = self.greetings[index]
+        print(self.greetings)
         if not greeting:
             print('this greeting is no good')
             return
@@ -95,13 +97,26 @@ class AlarmManager(object):
         if widg_display:
             application.alarm_screen.display_widget(widg_display)
 
-        sound = greeting.sound_bit
-        if not sound:
+        self.sound = greeting.sound_bit
+        if not self.sound:
             print('received empty sound')
             return
 
-        sound.bind(on_stop=self.greeting_done)
-        sound.play()
+        self.sound.bind(on_stop=self.greeting_done)
+        self.sound.play()
+
+    def skip_greeting(self):
+        if self.sound:
+            self.sound.unbind(on_stop=self.greeting_done)
+            self.sound.stop()
+
+        self.index += 1
+        self.play_greeting()
+
+    def cancel_wakeup(self):
+        if self.sound:
+            self.sound.unbind(on_stop=self.greeting_done)
+            self.sound.stop()
 
     def greeting_done(self, dt):
         time.sleep(2)
@@ -134,6 +149,13 @@ class AlarmScreen(Screen, Subscriber):
 
         self.main_widg = widg
         self.right_area.add_widget(widg)
+
+    def on_touch_down(self, touch):
+        if touch.is_double_tap:
+            application.alarm_manager.skip_greeting()
+        elif touch.is_triple_tap:
+            application.alarm_manager.cancel_wakeup()
+            application.sm.current = 'homescreen'
 
 class HomeScreen(Screen, Subscriber):
     widget_positions = {
@@ -217,7 +239,7 @@ class Tock(App):
 
         # Multiple screens
         self.sm = ScreenManager()
-        self.home_screen = HomeScreen(name='homscreen')
+        self.home_screen = HomeScreen(name='homescreen')
         self.alarm_screen = AlarmScreen(name='alarm')
         self.sm.add_widget(self.home_screen)
         self.sm.add_widget(self.alarm_screen)
@@ -231,7 +253,7 @@ class Tock(App):
         console_output = logging.StreamHandler()
         console_output.setLevel(logging.DEBUG)
 
-        log_file = logging.handlers.RotatingFileHandler('tock.log', maxBytes=80000, backupCount=10)
+        log_file = logging.handlers.RotatingFileHandler('tock.log', maxBytes=800000, backupCount=3)
         log_file.setLevel(logging.DEBUG)
 
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

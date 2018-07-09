@@ -6,6 +6,8 @@ from kivy.uix.label import Label
 from google.cloud import texttospeech as tts
 from kivy.core.audio import SoundLoader
 
+from kivy.uix.boxlayout import BoxLayout
+
 from utils import *
 from config import *
 
@@ -61,6 +63,7 @@ class WeatherGreeting(Greeting):
         super(WeatherGreeting, self).__init__(greeting_name='Weather')
         self.weather_url = Config().Constants.weather_query
         self.logger = logging.getLogger('tock')
+        self.data = None
         self.read_text = ''
 
     def fetch(self):
@@ -77,6 +80,7 @@ class WeatherGreeting(Greeting):
 
         weather_details = data.weather
         if len(weather_details) < 1:
+            self.logger.error('Lack of weather details with call. Received: {}'.format(data))
             return
 
         description = weather_details[0]['description']
@@ -84,5 +88,19 @@ class WeatherGreeting(Greeting):
         todays_low = data.main['temp_min']
         temp = data.main['temp']
 
+        self.data = data
+
         self.read_text = "It's {} degrees in Cupertino with {}. Today's high is {}, and the low will be {}".format(int(temp), description, int(todays_high), int(todays_low))
         self.sound_bit = self.generate_sound_bit(self.read_text)
+
+    def display_widget(self):
+        if not self.data:
+            return super(WeatherGreeting, self).display_widget()
+
+        box_layout = BoxLayout(orientation='vertical', size=(400, 300), size_hint=(None, None))
+        display_str = '{} °'.format(self.data.main['temp'])
+        box_layout.add_widget(Label(text=display_str, font_size=150))
+
+        hi_lo = 'H: {} L: {}'.format(self.data.main['temp_max'], self.data.main['temp_min'])
+        box_layout.add_widget(Label(text=hi_lo, font_size=50))
+        return box_layout
