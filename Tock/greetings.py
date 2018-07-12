@@ -8,8 +8,8 @@ from kivy.core.audio import SoundLoader
 
 from kivy.uix.boxlayout import BoxLayout
 
-from utils import *
-from config import *
+from utils import DotDict, SoundPlayer
+from config import Config
 
 
 class Greeting(object):
@@ -42,7 +42,8 @@ class Greeting(object):
         with open(out_file_name, 'wb') as out:
             out.write(response.audio_content)
 
-        return SoundLoader.load(out_file_name)
+        audio_player = Config().Constants.audio_player
+        return SoundPlayer(out_file_name, audio_player)
 
     def display_widget(self):
         """ Returns the widget to display in morning greeting scroll view
@@ -55,7 +56,7 @@ class WakeUpGreeting(Greeting):
     def __init__(self):
         super(WakeUpGreeting, self).__init__('Wake Up!')
         file_name = Config().Alarm.sound
-        self.sound_bit = SoundLoader.load(filename=file_name)
+        self.sound_bit = SoundPlayer(file_name)
 
 
 class WeatherGreeting(Greeting):

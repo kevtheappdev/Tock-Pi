@@ -2,24 +2,7 @@ import re
 import collections
 import logging
 
-
-# TODO: Inherit from collections instead of dict
-
-class DotDict(dict):
-    def __getitem__(self, item):
-        if item not in self:
-            return None
-        else:
-            return super(DotDict, self).__getitem__(item)
-
-    def __getattr__(self, item):
-        if item in self:
-            return self[item]
-        else:
-            return None
-
-    def __setattr__(self, key, value):
-        self.__setitem__(key, value)
+from utils import *
 
 
 class Subscriber(object):

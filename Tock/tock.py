@@ -31,6 +31,8 @@ from google.cloud import texttospeech as tts
 from config import *
 from utils import *
 from greetings import *
+from widgets import *
+from eval import eval_widg
 
 
 class AlarmManager(object):
@@ -133,7 +135,8 @@ class AlarmScreen(Screen, Subscriber):
         self.box_layout = BoxLayout(orientation='horizontal')
 
         self.left_area = AnchorLayout(anchor_x='center', anchor_y='center')
-        self.left_area.add_widget(TockClock())
+        self.left_area.add_widget(TockClock(font_size=75))
+
         self.right_area = AnchorLayout(anchor_x='center', anchor_y='center')
 
         self.box_layout.add_widget(self.left_area)

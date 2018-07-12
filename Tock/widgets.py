@@ -13,7 +13,7 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.layout import Layout
 
-from config import DotDict
+from utils import DotDict
 
 
 class WeatherLabel(Label):
@@ -42,11 +42,11 @@ class WeatherLabel(Label):
 
 
 class TockClock(Label):
-    def __init__(self, seconds=False, military=False, **kwargs):
+    def __init__(self, seconds=False, military=False, font_size=150, **kwargs):
         super(TockClock, self).__init__(**kwargs)
         self.seconds = seconds
         self.military = military
-        self.font_size = 150
+        self.font_size = font_size
         self.text = self.time_str()
         Clock.schedule_interval(self.update, 0.5)
 

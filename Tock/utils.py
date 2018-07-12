@@ -1,11 +1,10 @@
 import logging
-
+import time
+from subprocess import Popen
 from datetime import datetime
 from datetime import timedelta
 
-from widgets import *
-from backdrops import *
-from greetings import *
+from kivy.event import EventDispatcher
 
 
 # utility methods
@@ -38,20 +37,45 @@ def seconds_until(time_str):
     return (parsed_time - current_timestamp).total_seconds()
 
 
-def eval_widg(widg_name):
-    logger = logging.getLogger('tock')
-    try:
-        widg_class = eval(widg_name)
-    except NameError:
-        logger.exception('ERROR: Could not find class {}'.format(widg_name))
-        return None
-    else:
-        if callable(widg_class):
-            widget = widg_class()
+class DotDict(dict):
+    def __getitem__(self, item):
+        if item not in self:
+            return None
         else:
-            widget = widg_class
+            return super(DotDict, self).__getitem__(item)
 
-        return widget
+    def __getattr__(self, item):
+        if item in self:
+            return self[item]
+        else:
+            return None
+
+    def __setattr__(self, key, value):
+        self.__setitem__(key, value)
+
+
+class SoundPlayer(EventDispatcher):
+    def __init__(self, audio_file, audio_player=None):
+        super(SoundPlayer, self).__init__()
+        self.audio_file = audio_file
+        self.proc = None
+        if not audio_player:
+            self.audio_player = 'afplay'
+        else:
+            self.audio_player = audio_player
+
+    def play(self):
+        cmds = [self.audio_player, self.audio_file]
+        cmd_str = ' '.join(cmds)
+        try:
+            self.proc = Popen(cmd_str, shell=True)
+        except Exception as e:
+            logging.getLogger('tock').error('Failed to play audio file: {} with exception: {}'.format(self.audio_file, e))
+
+    def stop(self):
+        if self.proc:
+            self.proc.kill()
+
 
 
 
