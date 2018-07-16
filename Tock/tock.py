@@ -104,12 +104,11 @@ class AlarmManager(object):
             print('received empty sound')
             return
 
-        self.sound.bind(on_stop=self.greeting_done)
+        self.sound.call_back = self.greeting_done
         self.sound.play()
 
     def skip_greeting(self):
         if self.sound:
-            self.sound.unbind(on_stop=self.greeting_done)
             self.sound.stop()
 
         self.index += 1
@@ -117,10 +116,9 @@ class AlarmManager(object):
 
     def cancel_wakeup(self):
         if self.sound:
-            self.sound.unbind(on_stop=self.greeting_done)
             self.sound.stop()
 
-    def greeting_done(self, dt):
+    def greeting_done(self):
         time.sleep(2)
         self.index += 1
         self.play_greeting()
@@ -175,6 +173,7 @@ class HomeScreen(Screen, Subscriber):
         self.widgets = dict()
 
         Config().HomeScreen.add_subscriber(self)
+        Config().Alarm.add_subscriber(self)
 
         # view initialization
         self.load_views()
@@ -216,14 +215,15 @@ class HomeScreen(Screen, Subscriber):
         self.widgets[widg] = layout
         return layout
 
-    def update(self, updated_key):
-        if updated_key in self.widgets:
-            existing_widget = self.widgets[updated_key]
-            self.remove_widget(existing_widget)
+    def update(self, heading, updated_key):
+        if heading == 'HomeScreen':
+            if updated_key in self.widgets:
+                existing_widget = self.widgets[updated_key]
+                self.remove_widget(existing_widget)
 
-        updated_widget = self.get_widget(updated_key)
-        if updated_widget:
-            self.add_widget(updated_widget)
+            updated_widget = self.get_widget(updated_key)
+            if updated_widget:
+                self.add_widget(updated_widget)
 
 
 ############################################

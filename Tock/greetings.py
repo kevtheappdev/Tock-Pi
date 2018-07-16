@@ -105,3 +105,4 @@ class WeatherGreeting(Greeting):
         hi_lo = 'H: {} L: {}'.format(self.data.main['temp_max'], self.data.main['temp_min'])
         box_layout.add_widget(Label(text=hi_lo, font_size=50))
         return box_layout
+

@@ -3,6 +3,7 @@ import time
 from subprocess import Popen
 from datetime import datetime
 from datetime import timedelta
+from threading import Thread
 
 from kivy.event import EventDispatcher
 
@@ -54,23 +55,34 @@ class DotDict(dict):
         self.__setitem__(key, value)
 
 
-class SoundPlayer(EventDispatcher):
+class SoundPlayer():
     def __init__(self, audio_file, audio_player=None):
-        super(SoundPlayer, self).__init__()
         self.audio_file = audio_file
         self.proc = None
+        self.play_thread = None
+        self.call_back = None
         if not audio_player:
             self.audio_player = 'afplay'
         else:
             self.audio_player = audio_player
 
     def play(self):
+        self.play_thread = Thread(target=self._play_audio)
+        self.play_thread.start()
+
+    def _play_audio(self):
         cmds = [self.audio_player, self.audio_file]
         cmd_str = ' '.join(cmds)
         try:
             self.proc = Popen(cmd_str, shell=True)
         except Exception as e:
-            logging.getLogger('tock').error('Failed to play audio file: {} with exception: {}'.format(self.audio_file, e))
+            logging.getLogger('tock').error(
+                'Failed to play audio file: {} with exception: {}'.format(self.audio_file, e))
+
+        self.proc.wait()
+        if self.call_back:
+            self.call_back()
+        print('Finished playing audio')
 
     def stop(self):
         if self.proc:

@@ -36,7 +36,7 @@ class Config(object):
             Config.logger.debug('Notifying {} subscribers..'.format(len(self.subscribers)))
             for subscriber in self.subscribers:
                 Config.logger.debug('Subscriber: {}'.format(subscriber))
-                subscriber.update(key)
+                subscriber.update(self.heading, key)
 
     class ConfigInstance(DotDict):
         heading_pattern = '\[([a-zA-Z]+)\]'
