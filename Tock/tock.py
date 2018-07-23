@@ -45,6 +45,10 @@ class AlarmManager(object):
         if not self.alarm:
             raise ValueError('Configuration file not instantiated')
 
+        self._set_alarm()
+
+
+    def _set_alarm(self):
         alarm_time = self.alarm.time
         seconds = seconds_until(alarm_time)
         print('num seconds: {}'.format(seconds))
@@ -83,6 +87,7 @@ class AlarmManager(object):
 
     def reset(self, val):
         application.sm.current = 'homescreen'
+        self._set_alarm()
 
     def play_greeting(self):
         index = self.index
