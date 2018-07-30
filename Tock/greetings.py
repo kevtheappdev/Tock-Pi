@@ -74,7 +74,10 @@ class WeatherGreeting(Greeting):
         if not self.weather_url:
 
             return
-        req = requests.get(self.weather_url)
+        try:
+            req = requests.get(self.weather_url)
+        except Exception:
+            self.logger.error('Failed to retreive weather information')
         data = DotDict(req.json())
         print(data)
         if 'error' in data:
@@ -98,6 +101,8 @@ class WeatherGreeting(Greeting):
 
 
     def display_text(self):
+        if not self.data:
+            return 'Failed to retreive weather information'
         return 'High: {} Low: {}'.format(self.data.main['temp_max'], self.data.main['temp_min'])
 
 
