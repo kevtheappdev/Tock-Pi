@@ -97,9 +97,9 @@ class AlarmManager(object):
             return
 
         if greeting.delay > 0:
-            greeting.delay = 0
             self.logger.info('Delaying for {} seconds'.format(greeting.delay))
             Clock.schedule_interval(self.play_greeting, int(greeting.delay))
+            greeting.delay = 0
             return
 
         greeting_text = greeting.display_text()
