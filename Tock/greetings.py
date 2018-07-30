@@ -56,7 +56,8 @@ class WakeUpGreeting(Greeting):
     def __init__(self):
         super(WakeUpGreeting, self).__init__('Wake Up!')
         file_name = Config().Alarm.sound
-        self.sound_bit = SoundPlayer(file_name)
+        audio_player = Config().Constants.audio_player
+        self.sound_bit = SoundPlayer(file_name, audio_player=audio_player)
 
 
 class WeatherGreeting(Greeting):

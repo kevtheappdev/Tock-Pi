@@ -94,6 +94,7 @@ class AlarmManager(object):
         if index >= len(self.greetings):
             return
 
+        self.logger.info('Playing greeting at index: {}'.format(index))
         greeting = self.greetings[index]
         print(self.greetings)
         if not greeting:
@@ -285,5 +286,6 @@ class Tock(App):
 
 if __name__ == '__main__':
     logger = logging.getLogger('tock')
+    logger.setLevel(logging.INFO)
     application = Tock()
     application.run()
