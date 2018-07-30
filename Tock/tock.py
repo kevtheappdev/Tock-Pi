@@ -47,11 +47,11 @@ class AlarmManager(object):
 
         self._set_alarm()
 
-
-    def _set_alarm(self):
+    def _set_alarm(self, val=None):
+        self.logger.debug('Setting alarm now')
         alarm_time = self.alarm.time
         seconds = seconds_until(alarm_time)
-        print('num seconds: {}'.format(seconds))
+        self.logger.info('num seconds: {}'.format(seconds))
 
 
         greeting_implementations = self.alarm.greetings
@@ -81,15 +81,10 @@ class AlarmManager(object):
 
     def wakeup(self, val):
         self.logger.info('Waking up now...')
-        application.sm.current = 'alarm'
+        Clock.schedule_interval(self._set_alarm, 120)
         self.play_greeting()
-        Clock.schedule_interval(self.reset, 60*60)
 
-    def reset(self, val):
-        application.sm.current = 'homescreen'
-        self._set_alarm()
-
-    def play_greeting(self):
+    def play_greeting(self, val=None):
         index = self.index
         if index >= len(self.greetings):
             return
@@ -101,13 +96,19 @@ class AlarmManager(object):
             print('this greeting is no good')
             return
 
-        widg_display = greeting.display_widget()
-        if widg_display:
-            application.alarm_screen.display_widget(widg_display)
+        if greeting.delay > 0:
+            greeting.delay = 0
+            self.logger.info('Delaying for {} seconds'.format(greeting.delay))
+            Clock.schedule_interval(self.play_greeting, int(greeting.delay))
+            return
+
+        greeting_text = greeting.display_text()
+        if greeting_text:
+            application.home_screen.greeting_label.text = greeting_text
 
         self.sound = greeting.sound_bit
         if not self.sound:
-            print('received empty sound')
+            self.logger.error('received empty sound')
             return
 
         self.sound.call_back = self.greeting_done
@@ -116,6 +117,7 @@ class AlarmManager(object):
     def skip_greeting(self):
         if self.sound:
             self.sound.stop()
+            self.sound.call_back = None
 
         self.index += 1
         self.play_greeting()
@@ -132,37 +134,6 @@ class AlarmManager(object):
 ############################################
 #                 Screens                  #
 ############################################
-
-class AlarmScreen(Screen, Subscriber):
-    def __init__(self, **kwargs):
-        super(AlarmScreen, self).__init__(**kwargs)
-        self.box_layout = BoxLayout(orientation='horizontal')
-
-        self.left_area = AnchorLayout(anchor_x='center', anchor_y='center')
-        self.left_area.add_widget(TockClock(font_size=75))
-
-        self.right_area = AnchorLayout(anchor_x='center', anchor_y='center')
-
-        self.box_layout.add_widget(self.left_area)
-        self.box_layout.add_widget(self.right_area)
-
-        self.add_widget(self.box_layout)
-
-        self.main_widg = None
-
-    def display_widget(self, widg):
-        if self.main_widg:
-            self.right_area.remove_widget(self.main_widg)
-
-        self.main_widg = widg
-        self.right_area.add_widget(widg)
-
-    def on_touch_down(self, touch):
-        if touch.is_double_tap:
-            application.alarm_manager.skip_greeting()
-        elif touch.is_triple_tap:
-            application.alarm_manager.cancel_wakeup()
-            application.sm.current = 'homescreen'
 
 class HomeScreen(Screen, Subscriber):
     widget_positions = {
@@ -185,6 +156,7 @@ class HomeScreen(Screen, Subscriber):
         self.load_views()
 
     def load_views(self):
+        # custom widgets
         self.backdrop = self.get_widget('backdrop')
         self.top_left = self.get_widget('top-left')
         self.top_right = self.get_widget('top-right')
@@ -198,6 +170,11 @@ class HomeScreen(Screen, Subscriber):
         self.add_widget(self.top_right)
         self.add_widget(self.bottom_right)
 
+        # greeting info label
+        self.top_center = AnchorLayout(anchor_x='center', anchor_y='top')
+        self.greeting_label = Label(size_hint=(None, None), font_size=30)
+        self.top_center.add_widget(self.greeting_label)
+        self.add_widget(self.top_center)
 
     def get_widget(self, widg):
         if widg not in HomeScreen.widget_positions:
@@ -231,6 +208,10 @@ class HomeScreen(Screen, Subscriber):
             if updated_widget:
                 self.add_widget(updated_widget)
 
+    def on_touch_down(self, touch):
+        if touch.is_double_tap:
+            application.alarm_manager.skip_greeting()
+
 
 ############################################
 #                 Application              #
@@ -246,13 +227,7 @@ class Tock(App):
         # refresh config
         Clock.schedule_interval(self.load_config, 15)
 
-        # Multiple screens
-        self.sm = ScreenManager()
         self.home_screen = HomeScreen(name='homescreen')
-        self.alarm_screen = AlarmScreen(name='alarm')
-        self.sm.add_widget(self.home_screen)
-        self.sm.add_widget(self.alarm_screen)
-        # Clock.schedule_once(self.change_screens, 15)
 
     def setup_logging(self):
         # logging
@@ -273,11 +248,9 @@ class Tock(App):
         logger.addHandler(log_file)
         self.logger = logger
 
-    def change_screens(self, val):
-        self.sm.current = 'alarm'
 
     def build(self):
-        return self.sm
+        return self.home_screen
 
     def load_config(self, val=0):
         Config(self.config_file)

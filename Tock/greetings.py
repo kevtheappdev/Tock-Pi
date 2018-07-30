@@ -20,6 +20,7 @@ class Greeting(object):
         self.greeting_name = greeting_name
         self.sound_bit = None
         self.logger = logging.getLogger('tock')
+        self.delay = 0
 
     def fetch(self):
         """ Fetch data necessary for greeting
@@ -45,11 +46,8 @@ class Greeting(object):
         audio_player = Config().Constants.audio_player
         return SoundPlayer(out_file_name, audio_player)
 
-    def display_widget(self):
-        """ Returns the widget to display in morning greeting scroll view
-        :return: kivy.uix.widget.Widget
-        """
-        return Label(text=self.greeting_name)
+    def display_text(self):
+        return None
 
 
 class WakeUpGreeting(Greeting):
@@ -58,6 +56,9 @@ class WakeUpGreeting(Greeting):
         file_name = Config().Alarm.sound
         audio_player = Config().Constants.audio_player
         self.sound_bit = SoundPlayer(file_name, audio_player=audio_player)
+
+    def display_text(self):
+        return 'Wake Up!'
 
 
 class WeatherGreeting(Greeting):
@@ -95,15 +96,20 @@ class WeatherGreeting(Greeting):
         self.read_text = "It's {} degrees in Cupertino with {}. Today's high is {}, and the low will be {}".format(int(temp), description, int(todays_high), int(todays_low))
         self.sound_bit = self.generate_sound_bit(self.read_text)
 
-    def display_widget(self):
-        if not self.data:
-            return super(WeatherGreeting, self).display_widget()
 
-        box_layout = BoxLayout(orientation='vertical', size=(400, 300), size_hint=(None, None))
-        display_str = '{} °'.format(self.data.main['temp'])
-        box_layout.add_widget(Label(text=display_str, font_size=150))
+    def display_text(self):
+        return 'High: {} Low: {}'.format(self.data.main['temp_max'], self.data.main['temp_min'])
 
-        hi_lo = 'H: {} L: {}'.format(self.data.main['temp_max'], self.data.main['temp_min'])
-        box_layout.add_widget(Label(text=hi_lo, font_size=50))
-        return box_layout
 
+class FinalWakeUp(Greeting):
+    def __init__(self):
+        super(FinalWakeUp, self).__init__('final_wakeup')
+        self.wake_up_txt = Config().Constants.final_wakeup
+        self.delay = 120
+
+    def fetch(self):
+        if self.wake_up_txt:
+            self.sound_bit = self.generate_sound_bit(self.wake_up_txt)
+
+    def display_text(self):
+        return self.wake_up_txt

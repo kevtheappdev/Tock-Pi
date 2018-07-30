@@ -55,12 +55,13 @@ class DotDict(dict):
         self.__setitem__(key, value)
 
 
-class SoundPlayer():
+class SoundPlayer(object):
     def __init__(self, audio_file, audio_player=None):
         self.audio_file = audio_file
         self.proc = None
         self.play_thread = None
         self.call_back = None
+        self.logger = logging.getLogger('tock')
         if not audio_player:
             self.audio_player = 'afplay'
         else:
@@ -73,6 +74,7 @@ class SoundPlayer():
     def _play_audio(self):
         cmds = [self.audio_player, self.audio_file]
         cmd_str = ' '.join(cmds)
+        self.logger.debug('Audio player command: {}'.format(cmd_str))
         try:
             self.proc = Popen(cmd_str, shell=True)
         except Exception as e:
@@ -82,7 +84,7 @@ class SoundPlayer():
         self.proc.wait()
         if self.call_back:
             self.call_back()
-        print('Finished playing audio')
+        self.logger.info('Finished playing audio: {}'.format(self.audio_file))
 
     def stop(self):
         if self.proc:
