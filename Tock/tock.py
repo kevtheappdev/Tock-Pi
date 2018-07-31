@@ -81,12 +81,14 @@ class AlarmManager(object):
 
     def wakeup(self, val):
         self.logger.info('Waking up now...')
-        Clock.schedule_interval(self._set_alarm, 120)
+        application.home_screen.alarm_playing = True
+        Clock.schedule_once(self._set_alarm, 120)
         self.play_greeting()
 
     def play_greeting(self, val=None):
         index = self.index
         if index >= len(self.greetings):
+            application.home_screen.alarm_playing = False
             return
 
         self.logger.info('Playing greeting at index: {}'.format(index))
@@ -98,7 +100,7 @@ class AlarmManager(object):
 
         if greeting.delay > 0:
             self.logger.info('Delaying for {} seconds'.format(greeting.delay))
-            Clock.schedule_interval(self.play_greeting, int(greeting.delay))
+            Clock.schedule_once(self.play_greeting, int(greeting.delay))
             greeting.delay = 0
             return
 
@@ -149,8 +151,11 @@ class HomeScreen(Screen, Subscriber):
         super(HomeScreen, self).__init__(**kwargs)
         self.widgets = dict()
 
+        # establish updates
         Config().HomeScreen.add_subscriber(self)
         Config().Alarm.add_subscriber(self)
+
+        self.alarm_playing = False
 
         # view initialization
         self.load_views()
@@ -209,7 +214,7 @@ class HomeScreen(Screen, Subscriber):
                 self.add_widget(updated_widget)
 
     def on_touch_down(self, touch):
-        if touch.is_double_tap:
+        if touch.is_double_tap and self.alarm_playing:
             application.alarm_manager.skip_greeting()
 
 
