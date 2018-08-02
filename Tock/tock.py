@@ -86,16 +86,18 @@ class AlarmManager(object):
         self.play_greeting()
 
     def play_greeting(self, val=None):
+        application.home_screen.greeting_label.text = ''
         index = self.index
         if index >= len(self.greetings):
+            self.logger.info('Done playing greetings')
             application.home_screen.alarm_playing = False
             return
 
         self.logger.info('Playing greeting at index: {}'.format(index))
         greeting = self.greetings[index]
-        print(self.greetings)
+        logger.debug(self.greetings)
         if not greeting:
-            print('this greeting is no good')
+            logger.error('this greeting is no good')
             return
 
         if greeting.delay > 0:
@@ -212,6 +214,9 @@ class HomeScreen(Screen, Subscriber):
             updated_widget = self.get_widget(updated_key)
             if updated_widget:
                 self.add_widget(updated_widget)
+        elif heading == 'Alarm':
+            # TODO: Make alarm actually updatable
+            application.alarm_manager._set_alarm()
 
     def on_touch_down(self, touch):
         if touch.is_double_tap and self.alarm_playing:
@@ -240,10 +245,10 @@ class Tock(App):
         logger.setLevel(logging.DEBUG)
 
         console_output = logging.StreamHandler()
-        console_output.setLevel(logging.DEBUG)
+        console_output.setLevel(logging.INFO)
 
         log_file = logging.handlers.RotatingFileHandler('tock.log', maxBytes=800000, backupCount=3)
-        log_file.setLevel(logging.DEBUG)
+        log_file.setLevel(logging.INFO)
 
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         log_file.setFormatter(formatter)
@@ -264,6 +269,5 @@ class Tock(App):
 
 if __name__ == '__main__':
     logger = logging.getLogger('tock')
-    logger.setLevel(logging.INFO)
     application = Tock()
     application.run()
