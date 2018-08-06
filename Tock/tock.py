@@ -81,6 +81,7 @@ class AlarmManager(object):
 
     def wakeup(self, val):
         self.logger.info('Waking up now...')
+        self.index = 0
         application.home_screen.alarm_playing = True
         Clock.schedule_once(self._set_alarm, 120)
         self.play_greeting()
