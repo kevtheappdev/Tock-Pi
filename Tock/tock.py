@@ -101,10 +101,10 @@ class AlarmManager(object):
             logger.error('this greeting is no good')
             return
 
-        if greeting.delay > 0:
+        if greeting.delay > 0 and not greeting.delayed:
             self.logger.info('Delaying for {} seconds'.format(greeting.delay))
             Clock.schedule_once(self.play_greeting, int(greeting.delay))
-            greeting.delay = 0
+            greeting.delayed = True
             return
 
         greeting_text = greeting.display_text()
@@ -118,6 +118,8 @@ class AlarmManager(object):
 
         self.sound.call_back = self.greeting_done
         self.sound.play()
+
+        greeting.delayed = False
 
     def skip_greeting(self):
         if self.sound:

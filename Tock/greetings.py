@@ -21,6 +21,7 @@ class Greeting(object):
         self.sound_bit = None
         self.logger = logging.getLogger('tock')
         self.delay = 0
+        self.delayed = False
 
     def fetch(self):
         """ Fetch data necessary for greeting
