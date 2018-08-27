@@ -4,6 +4,7 @@ import requests
 import logging
 from kivy.uix.widget import Widget
 from kivy.uix.label import Label
+from kivy.uix.button import Button
 from kivy.clock import Clock
 from kivy import Logger
 from kivy.uix.image import AsyncImage
@@ -14,6 +15,11 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.layout import Layout
 
 from utils import DotDict
+
+class BrightnessStates(object):
+    full = 100
+    med = 50
+    dark = 20
 
 
 class WeatherLabel(Label):
@@ -29,7 +35,7 @@ class WeatherLabel(Label):
 
     def fetch(self, val=0):
         # TODO: Avoid hard coding
-        req = requests.get("http://api.openweathermap.org/data/2.5/weather?q=Cupertino&appid=1c51e68c4823e92a75f2590404fd6634&units=imperial")
+        req = requests.get("http://api.openweathermap.org/data/2.5/weather?q=Austin&appid=1c51e68c4823e92a75f2590404fd6634&units=imperial")
         data = DotDict(req.json())
         if 'error' in data:
             self.logger.error('Error fetching weather: {}'.format(data['error']))
@@ -78,4 +84,31 @@ class TockDate(Label):
 
     def date_str(self, val=0):
         self.text = time.strftime('%b %d')
+
+class BrightnessButton(Button):
+    brightnesses = [('Full', 100), ('Medium', 75), ('Night', 30)]
+
+    def __init__(self, **kwargs):
+        super(BrightnessButton, self).__init__(**kwargs)
+        self.size_hint = (None, None)
+        self.font_size = 50
+        self.size = (300, 50)
+        self.current_brightness = 0
+        self.text = self.brightnesses[self.current_brightness][0]
+
+    def on_touch_down(self, touch):
+        try:
+            import rpi_backlight as bl
+        except ImportError:
+            print('No library to change brightness')
+            return True
+
+        self.current_brightness = (self.current_brightness + 1) % len(self.brightnesses)
+        brightness_data = self.brightnesses[self.current_brightness]
+        brightness = brightness_data[1]
+        self.text = brightness_data[0]
+        bl.set_brightness(brightness)
+
+        return True
+
 

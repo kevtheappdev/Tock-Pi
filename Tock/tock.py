@@ -18,6 +18,7 @@ from kivy.core.audio import SoundLoader
 from google.cloud import texttospeech as tts
 
 
+# UI Debugging
 # from kivy.lang.builder import Builder
 #
 # Builder.load_string('''<Widget>:
@@ -179,6 +180,7 @@ class HomeScreen(Screen, Subscriber):
         self.add_widget(self.top_left)
         self.add_widget(self.top_right)
         self.add_widget(self.bottom_right)
+        self.add_widget(self.bottom_left)
 
         # greeting info label
         self.top_center = AnchorLayout(anchor_x='center', anchor_y='top')
@@ -187,6 +189,7 @@ class HomeScreen(Screen, Subscriber):
         self.add_widget(self.top_center)
 
     def get_widget(self, widg):
+        logger.info('widg: {}'.format(widg))
         if widg not in HomeScreen.widget_positions:
             logger.exception('Widget not in a specified position')
             raise ValueError('Requested for invalid widget position: {}'.format(widg))
@@ -198,7 +201,7 @@ class HomeScreen(Screen, Subscriber):
 
 
         if not widg_name:
-            logger.warning('Widget not specified in configuration file, returning empty widget')
+            logger.warning('Widget {} not specified in configuration file, returning empty widget'.format(widg))
             return AnchorLayout(anchor_x=anchor_x, anchor_y=anchor_y)
 
         widget = eval_widg(widg_name)
@@ -224,6 +227,9 @@ class HomeScreen(Screen, Subscriber):
     def on_touch_down(self, touch):
         if touch.is_double_tap and self.alarm_playing:
             application.alarm_manager.skip_greeting()
+            return True
+        else:
+            return super(HomeScreen, self).on_touch_down(touch)
 
 
 ############################################
