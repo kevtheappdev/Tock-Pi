@@ -16,11 +16,6 @@ from kivy.uix.layout import Layout
 
 from utils import DotDict
 
-class BrightnessStates(object):
-    full = 100
-    med = 50
-    dark = 20
-
 
 class WeatherLabel(Label):
     def __init__(self, **kwargs):
@@ -91,10 +86,11 @@ class BrightnessButton(Button):
     def __init__(self, **kwargs):
         super(BrightnessButton, self).__init__(**kwargs)
         self.size_hint = (None, None)
-        self.font_size = 50
-        self.size = (300, 50)
+        self.font_size = 25
+        self.size = (150, 50)
         self.current_brightness = 0
         self.text = self.brightnesses[self.current_brightness][0]
+        self.background_color = (0, 0, 0, 0)
 
     def on_touch_down(self, touch):
         try:
