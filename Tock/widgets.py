@@ -91,13 +91,20 @@ class BrightnessButton(Button):
         self.current_brightness = 0
         self.text = self.brightnesses[self.current_brightness][0]
         self.background_color = (0, 0, 0, 0)
+        self.bind(on_press=self.pressed)
 
-    def on_touch_down(self, touch):
+    def pressed(self, instance):
         try:
             import rpi_backlight as bl
         except ImportError:
             print('No library to change brightness')
-            return True
+            return
+
+        self.current_brightness = (self.current_brightness + 1) % len(self.brightnesses)
+        brightness_data = self.brightnesses[self.current_brightness]
+        brightness = brightness_data[1]
+        self.text = brightness_data[0]
+        bl.set_brightness(brightness)
 
         self.current_brightness = (self.current_brightness + 1) % len(self.brightnesses)
         brightness_data = self.brightnesses[self.current_brightness]
