@@ -121,6 +121,7 @@ class NextAlarmLabel(Label):
         super(NextAlarmLabel, self).__init__(**kwargs)
         self.size_hint = (None, None)
         self.size = (225, 50)
+        self.font_size = 25
         self.update_time()
         Clock.schedule_interval(self.update_time, 1)
 
