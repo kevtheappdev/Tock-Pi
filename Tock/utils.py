@@ -30,10 +30,10 @@ def seconds_until(time_str):
         return
 
     parsed_time = parsed_time.replace(year=current_timestamp.year, day=current_timestamp.day, month=current_timestamp.month)
-    logging.getLogger('tock').info('parsed time: {}'.format(parsed_time))
-
     if current_timestamp > parsed_time:
         parsed_time += timedelta(days=1)
+
+    logging.getLogger('tock').info('parsed time: {}'.format(parsed_time))
 
     return (parsed_time - current_timestamp).total_seconds()
 

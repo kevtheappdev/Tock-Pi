@@ -15,6 +15,7 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.layout import Layout
 
 from utils import DotDict
+from config import *
 
 
 class WeatherLabel(Label):
@@ -97,6 +98,7 @@ class BrightnessButton(Button):
         try:
             import rpi_backlight as bl
         except ImportError:
+            # TODO: add logging here
             print('No library to change brightness')
             return
 
@@ -114,4 +116,15 @@ class BrightnessButton(Button):
 
         return True
 
+class NextAlarmLabel(Label):
+    def __init__(self, **kwargs):
+        super(NextAlarmLabel, self).__init__(**kwargs)
+        self.size_hint = (None, None)
+        self.size = (225, 50)
+        self.update_time()
+        Clock.schedule_interval(self.update_time, 1)
+
+    def update_time(self, val=0):
+        # peridically fetch time to update
+        self.text = '{} Alarm'.format(Config().Alarm.time)
 
