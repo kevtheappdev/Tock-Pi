@@ -47,6 +47,7 @@ class Greeting(object):
         audio_player = Config().Constants.audio_player
         return SoundPlayer(out_file_name, audio_player)
 
+    # TODO: get rid of this getter
     def display_text(self):
         return None
 
@@ -118,4 +119,4 @@ class FinalWakeUp(Greeting):
             self.sound_bit = self.generate_sound_bit(self.wake_up_txt)
 
     def display_text(self):
-        return self.wake_up_txt
+        return ''
