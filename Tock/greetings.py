@@ -95,10 +95,11 @@ class WeatherGreeting(Greeting):
         todays_high = data.main['temp_max']
         todays_low = data.main['temp_min']
         temp = data.main['temp']
+        location = data.name
 
         self.data = data
 
-        self.read_text = "It's {} degrees in Cupertino with {}. Today's high is {}, and the low will be {}".format(int(temp), description, int(todays_high), int(todays_low))
+        self.read_text = "It's {} degrees in {} with {}. Today's high is {}, and the low will be {}".format(int(temp), location, description, int(todays_high), int(todays_low))
         self.sound_bit = self.generate_sound_bit(self.read_text)
 
 
