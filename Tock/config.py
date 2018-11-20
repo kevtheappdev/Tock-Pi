@@ -45,6 +45,9 @@ class Config(object):
             super(Config.ConfigInstance, self).__init__(**kwargs)
             self.load_config(config_file)
 
+        def to_dict(self):
+            return dict(self)
+
         def load_config(self, config_file):
             # load file
             with open(config_file, 'r') as cf:

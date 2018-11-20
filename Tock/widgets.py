@@ -82,7 +82,7 @@ class TockDate(Label):
         self.text = time.strftime('%b %d')
 
 class BrightnessButton(Button):
-    brightnesses = [('Full', 100), ('Medium', 75), ('Night', 30)]
+    brightnesses = [('Full', 100), ('Medium', 75), ('Night', 20)]
 
     def __init__(self, **kwargs):
         super(BrightnessButton, self).__init__(**kwargs)

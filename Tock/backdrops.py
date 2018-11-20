@@ -11,6 +11,7 @@ from kivy.clock import Clock
 
 IMAGE_LOG = 'image_log.txt'
 
+
 class NasaApod(FloatLayout):
     def __init__(self, show_desc=True, **kwargs):
         super(NasaApod, self).__init__(**kwargs)
